@@ -1,0 +1,134 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Simple EC2 Instance
+
+Parameters:
+  SecurityGroups:
+    Description: SecurityGroup ID for Instance to use.
+    Type: List<AWS::EC2::SecurityGroup::Id>
+
+  InstanceType:
+    Description: Size of the EC2 Instance (T3 series only).
+    Type: String
+    Default: t3.nano
+    AllowedValues:
+      - t3.nano
+      - t3.micro
+      - t3.small
+      - t3.medium
+      - t3.large
+      - t3.xlarge
+      - t3.2xlarge
+
+  ImageID:
+    Description: AMI for EC2 Instance to use.
+    Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+    Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
+
+  KeyPair:
+    Description: KeyPair for EC2 Instance to use.
+    Type: AWS::EC2::KeyPair::KeyName
+
+  InstanceSubnet:
+    Description: Subnet for EC2 Instance to be placed in.
+    Type: AWS::EC2::Subnet::Id
+
+  VolumeSize:
+    Description: The size of the EBS Volume attached to the VPC (maximum 9GB)
+    Type: String
+    MaxLength: 1
+
+  InstanceName:
+    Description: Name for EC2 Instance (optional)
+    Type: String
+    Default: WebServer
+
+
+
+Resources: 
+  # Web Server with CFN-Signal to validate user-data completion
+  WebServer:
+    Type: AWS::EC2::Instance
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT15M
+    Properties:
+      ImageId: !Ref ImageID
+      InstanceType: !Ref InstanceType
+      SecurityGroupIds: !Ref SecurityGroups
+      KeyName: !Ref KeyPair
+      SubnetId: !Ref InstanceSubnet
+      IamInstanceProfile: !Ref InstanceProfile
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeSize: !Ref VolumeSize
+            VolumeType: gp2
+      Tags:
+        - Key: Owners
+          Value: William/Chris
+        - Key: Name
+          Value: !Ref InstanceName
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
+          #Update MOTD stating who has the best CFN Template
+          rm -rf /etc/update-motd.d/*
+          echo "#!/bin/sh" > /etc/update-motd.d/motd
+          echo "echo \"Willam&Chris Template > Dawid&Darren Template\"" > /etc/update-motd.d/motd
+          echo "echo \"Willam&Chris Template > Dawid&Darren Template\"" >> /etc/update-motd.d/motd
+          echo "echo \"Willam&Chris Template > Dawid&Darren Template\"" >> /etc/update-motd.d/motd
+          echo "echo \"Willam&Chris Template > Dawid&Darren Template\"" >> /etc/update-motd.d/motd
+          echo "echo \"Willam&Chris Template > Dawid&Darren Template\"" >> /etc/update-motd.d/motd
+          echo "echo \"Willam&Chris Template > Dawid&Darren Template\"" >> /etc/update-motd.d/motd
+          chmod 755 /etc/update-motd.d/motd
+          update-motd
+          #Send Response from cfn-signal
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource WebServer --region ${AWS::Region}
+
+  #SSM Role for WebServer
+  WebServerSSMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: IAM Role allowing WebServer EC2 Instance to connect to SSM.
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns: 
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
+      RoleName: !Sub
+        - ${InstanceName}-SSMRole
+        - { InstanceName: !Ref InstanceName }
+      Tags:
+        - Key: Owners
+          Value: William/Chris
+
+  #Instance Profile for SSM Role
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: !Sub
+        - ${InstanceName}-InstanceProfile
+        - { InstanceName: !Ref InstanceName }
+      Roles: 
+        - !Ref WebServerSSMRole
+
+Outputs:
+  #WebServer nstanceID Output & Export
+  WebServer:
+    Description: Web Server EC2 InstanceID
+    Value: !Ref WebServer
+    Export:
+      Name: WebServer
+
+  #WebServerSSMRole Name Output & Export
+  WebServerSSMRole:
+    Description: Web Server SSM Role Name
+    Value: !Ref WebServerSSMRole
+    Export:
+      Name: WebServerSSMRole
