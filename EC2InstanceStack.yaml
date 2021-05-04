@@ -120,7 +120,7 @@ Resources:
 
 
 Outputs:
-  #WebServer nstanceID Output & Export
+  #WebServer InstanceID Output & Export
   WebServer:
     Description: Web Server EC2 InstanceID
     Value: !Ref WebServer
