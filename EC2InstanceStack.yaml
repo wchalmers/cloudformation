@@ -68,7 +68,7 @@ Resources:
           Value: William/Chris
         - Key: Name
           Value: !Ref InstanceName
-      UserData:
+      UserData: # Bootstraps instance to change daily login message & sends signal back to CF when complete
         Fn::Base64: !Sub |
           #!/bin/bash -xe
           #Update MOTD stating who has the best CFN Template
@@ -117,6 +117,7 @@ Resources:
         - { InstanceName: !Ref InstanceName }
       Roles: 
         - !Ref WebServerSSMRole
+
 
 Outputs:
   #WebServer nstanceID Output & Export
