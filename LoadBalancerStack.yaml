@@ -33,19 +33,15 @@ Resources:
       IpAddressType: "ipv4"
       Name: !Sub company-website-${Environment}
       SecurityGroups:
-        - !Ref ALBSecurityGroup
+        - !GetAtt ALBSecurityGroup.GroupId
       Subnets: !Ref ALBSubnets
 
   # Application Load Balancer Security Group
   ALBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: !Sub 
-        - "Security Group used to control the inbound traffic to the ${ALBName} ALB."
-        - { ALBName: !GetAtt SiteApplicationLoadBalancer.LoadBalancerName }
-      GroupName: !Sub
-        - "$ALBName-SG"
-        - { ALBName: !GetAtt SiteApplicationLoadBalancer.LoadBalancerName }
+      GroupDescription: !Sub Security Group used to control the inbound traffic to the company-website-${Environment} ALB.
+      GroupName: !Sub company-website-${Environment}-ALB-SG
       SecurityGroupIngress:
       - IpProtocol: tcp
         Description: Allow all traffic from Port 80 # Rule Descriptions dont seem to work, need to investigate this further
