@@ -1,0 +1,20 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: ---
+
+
+
+Resources: 
+
+#VPC (IPv4 & IPv6)
+
+# Subnet 1 (Public)
+
+# Subnet 2 (Public)
+
+# Subnet 3 (Private)
+
+# Subnet 4 (Private)
+
+# Internet Gateway
+
+#Other things: Security Groups, NACLs, Route Tables, Gateway/Interface Endpoint, NAT Gateway, egress only IGW

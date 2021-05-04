@@ -1,0 +1,174 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Application Load Balancer setup with ALB, Listners, TGs, EC2 ASG & WAF
+
+
+Parameters: 
+  Environment:
+    Description: Environment this stack is being deployed in.
+    Type: String
+    Default: Test
+    AllowedValues:
+      - Dev 
+      - Test
+      - UAT
+      - Stage
+      - Prod
+  VPCID:
+    Description: VPC That the resources will be created inside.
+    Type: AWS::EC2::VPC::Id
+  ALBSubnets:
+    Description: Subnets for ALB to be placed in (Please select at least two subnets).
+    Type: List<AWS::EC2::Subnet::Id>
+  ACMCertificateARN:
+    Description: ACM Certificate ARN used for Application Load Balancer.
+    Type: String
+    Default: arn:aws:acm:eu-west-2:192984629876:certificate/5b15f225-b91c-4461-bb8d-314e6be93d7b #Used for ease of test deployments, should be removed when template is complete
+
+
+Resources: 
+  # Application Load Balancer, which will be the front end of this stack
+  SiteApplicationLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      IpAddressType: "ipv4"
+      Name: !Sub company-website-${Environment}
+      SecurityGroups:
+        - !Ref ALBSecurityGroup
+      Subnets: !Ref ALBSubnets
+
+  # Application Load Balancer Security Group
+  ALBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub 
+        - "Security Group used to control the inbound traffic to the ${ALBName} ALB."
+        - { ALBName: !GetAtt SiteApplicationLoadBalancer.LoadBalancerName }
+      GroupName: !Sub
+        - "$ALBName-SG"
+        - { ALBName: !GetAtt SiteApplicationLoadBalancer.LoadBalancerName }
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        Description: Allow all traffic from Port 80 # Rule Descriptions dont seem to work, need to investigate this further
+        CidrIp: 0.0.0.0/0
+        FromPort: 80
+        ToPort: 80
+      - IpProtocol: tcp
+        Description: Allow all traffic from Port 443 # Rule Descriptions dont seem to work, need to investigate this further
+        CidrIp: 0.0.0.0/0
+        FromPort: 443
+        ToPort: 443
+
+  # Main Site TargetGroup
+  SiteMainTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 300
+      HealthCheckPath: /site-health
+      HealthCheckProtocol: HTTPS
+      HealthCheckTimeoutSeconds: 60
+      HealthyThresholdCount: 5
+      Name: SiteMain-TG
+      Port: 443
+      Protocol: HTTPS
+      UnhealthyThresholdCount: 3
+      VpcId: !Ref VPCID
+
+  # Site Shop TargetGroup
+  SiteShopTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 300
+      HealthCheckPath: /shop-health
+      HealthCheckProtocol: HTTPS
+      HealthCheckTimeoutSeconds: 60
+      HealthyThresholdCount: 5
+      Name: SiteShop-TG
+      Port: 443
+      Protocol: HTTPS
+      UnhealthyThresholdCount: 3
+      VpcId: !Ref VPCID
+
+  # Listner 1 (HTTP)
+  ALBListnerHTTP:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: "redirect"
+          RedirectConfig:
+            Protocol: HTTPS
+            Port: 443
+            Host: "#{host}"
+            Path: "/#{path}"
+            Query: "#{query}"
+            StatusCode: HTTP_301
+      LoadBalancerArn: !Ref SiteApplicationLoadBalancer
+      Port: 80
+      Protocol: HTTP
+
+  # Listner 2 (HTTPS)
+  ALBListnerHTTPS:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      Certificates:
+        - CertificateArn: !Ref ACMCertificateARN
+      DefaultActions:
+        - Type: "forward"
+          TargetGroupArn: !Ref SiteMainTargetGroup
+      LoadBalancerArn: !Ref SiteApplicationLoadBalancer
+      Port: 443
+      Protocol: HTTPS
+
+  # Listner Rule - Path Based
+  ListnerRulePathPattern:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Priority: 1
+      ListenerArn: !Ref ALBListnerHTTPS
+      Conditions:
+      - # Dash is used here to turn below into an array to avoid CF erors when deploying (Same with the dash under "Actions" & "TargetGroups" in the below lines)
+        Field: "path-pattern"
+        Values:
+          - "/shop"
+          - "/shop/*"
+      Actions:
+      -
+        Type: "forward"
+        TargetGroupArn: !Ref SiteShopTargetGroup
+        ForwardConfig:
+          TargetGroups:
+          -
+            TargetGroupArn: !Ref SiteShopTargetGroup
+            Weight: 1
+          TargetGroupStickinessConfig:
+            Enabled: False
+
+  # Listner Rule - Host Based
+  ListnerRuleHostHeader:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Priority: 2
+      ListenerArn: !Ref ALBListnerHTTPS
+      Conditions:
+      - # Dash is used here to turn below into an array to avoid CF erors when deploying (Same with the dash under "Actions" & "TargetGroups" in the below lines)
+        Field: "host-header"
+        Values:
+        - "shop*.*"
+      Actions:
+      -
+        Type: "forward"
+        TargetGroupArn: !Ref SiteShopTargetGroup
+        ForwardConfig:
+          TargetGroups:
+          -
+            TargetGroupArn: !Ref SiteShopTargetGroup
+            Weight: 1
+          TargetGroupStickinessConfig:
+            Enabled: False
+
+# WAF Config
+
+# ASG Config
+
+# Security Group (ASG)
+
+# Output: ALB DNS Name !GetAtt DNSName
