@@ -6,6 +6,7 @@ Repo containing all self-created, personal CloudFormation Templates.
 Creates an EC2 instance, bootstraps instance to update the Message of the day, uses cfn-signal to confirm bootstrapping has completed & creates + attaches SSM Role
 
 **Uses:** Parameters, EC2, cfn-signal, IAM Role, Instance Profile, Outputs
+
 **Future Updates:** Include cfn-init & cfn-hup.
 
 
