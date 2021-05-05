@@ -211,26 +211,5 @@ Resources:
       ResourceArn: !Ref SiteApplicationLoadBalancer
       WebACLArn: !GetAtt SiteWAF.Arn
 
-# ASG Config
-
-
-  # ASG Security Group
-  ASGSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: Security Group used to control the inbound traffic to the ASG created EC2 instances.
-      GroupName: !Sub company-website-${Environment}-ASG-SG
-      SecurityGroupIngress:
-      - IpProtocol: tcp
-        Description: Allow HTTPS traffic from ALB-SG # Rule Descriptions dont seem to work, need to investigate this further
-        FromPort: 80
-        ToPort: 80
-        SourceSecurityGroupId: !GetAtt ALBSecurityGroup.GroupId
-      # - IpProtocol: tcp # Uncomment this rule & link RDS SG to allow traffic from DB if there is one
-      #   Description: Allow MySQL traffic from RDS SecurityGroup
-      #   FromPort: 3389
-      #   ToPort: 3389
-      #   SourceSecurityGroupId: # Database Security would be referenced here
-
 
 # Output: ALB DNS Name !GetAtt DNSName
