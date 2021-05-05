@@ -5,8 +5,7 @@ Repo containing all self-created, personal CloudFormation Templates.
 ## EC2InstanceStack
 Creates an EC2 instance, bootstraps instance to update the Message of the day, uses cfn-signal to confirm bootstrapping has completed & creates + attaches SSM Role
 
-**Uses:** Parameters, EC2, cfn-signal, IAM Role, Instance Profile, Outputs
-
+**Uses:** Parameters, EC2, cfn-signal, IAM Role, Instance Profile, Outputs <br />
 **Future Updates:** Include cfn-init & cfn-hup.
 
 
