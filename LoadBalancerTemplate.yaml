@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: Application Load Balancer setup with ALB, Listners, TGs, EC2 ASG & WAF
+Description: Application Load Balancer setup with ALB, Listners, TGs & WAF
 
 
 Parameters: 
