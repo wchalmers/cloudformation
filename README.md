@@ -16,7 +16,7 @@ Creates an ALB with Listners, Listner rules, attached WAF, Target Groups & Secur
 **Pending Additions:** Ouputs section
 
 ## ASG Template
-**Still WIP** Once complete, it will create an ASG, Launch Templates, Security Groups & IAM Roles (and Instance Profiles).
+**Still WIP** Once complete, it will create an ASG, Launch Templates, Security Groups & IAM Roles (and Instance Profiles) & CloudWatch/SNS Alarms.
 
 
 ## VPCTemplate

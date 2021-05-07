@@ -1,6 +1,21 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: ASG Setup with Instance Roles, ASGs, Launch Templates & Security Groups.
 
+
+Parameters:
+  AMI-ID:
+    Description: The ID of the AMI the ASG will use when launching new Instances.
+      Type: List<AWS::EC2::Image::Id>
+  InstanceType:
+    Description: Type of Instance the ASG will launch (e.g. m5.large)
+    Type: String
+  Monitoring:
+    Description: Select if Enhanced Monitoring should be enabled on the ASG Instances.
+    Type: String
+    AllowedValues:
+      - True
+      - False
+
 Resources:
   # Site ASG Config
   WebsiteASG:
@@ -11,14 +26,32 @@ Resources:
       DesiredCapacity: 5
       MaxSize: 10
       HealthCheckType: ELB
-      LaunchTemplate: 
+      LaunchTemplate: !Ref WebsiteLaunchTemplate
+      
 
 
   # Site ASG Launch Template
   WebsiteLaunchTemplate:
     Type: AWS::EC2::LaunchTemplate
     Properties:
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeSize: !Ref VolumeSize
+            VolumeType: gp2
+      IamInstanceProfile: !Ref InstanceProfile
+      ImageID: !Ref AMI-ID
+      InstanceType: !Ref InstanceType
+      SecurityGroupIds: !GetAtt ASGSecurityGroup.GroupId
+      Monitoring: !Ref Monitoring
+      Placement:
+        GroupName: !Ref WebsitePlacementGroup
 
+  # Placement Group for Instances inside WebsiteASG
+  WebsitePlacementGroup:
+    Type: AWS::EC2::PlacementGroup
+    Properties: 
+      Strategy: Spread
 
   # ASG Security Group
   ASGSecurityGroup:
@@ -37,3 +70,30 @@ Resources:
       #   FromPort: 3389
       #   ToPort: 3389
       #   SourceSecurityGroupId: # Database Security would be referenced here
+
+ASGInstancesSSMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: IAM Role allowing instances inside the WebsiteASG to connect to SSM.
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns: 
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
+      RoleName: WebsiteASG-SSMRole
+
+  #Instance Profile for SSM Role
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: !Sub
+        - ${RoleName}-InstanceProfile
+        - { RoleName: !Ref ASGInstancesSSMRole }
+      Roles: 
+        - !Ref ASGInstancesSSMRole
