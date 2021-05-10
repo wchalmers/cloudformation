@@ -3,9 +3,9 @@ Description: ASG Setup with Instance Roles, ASGs, Launch Templates & Security Gr
 
 
 Parameters:
-  AMI-ID:
+  AMIID:
     Description: The ID of the AMI the ASG will use when launching new Instances.
-      Type: List<AWS::EC2::Image::Id>
+    Type: List<AWS::EC2::Image::Id>
   InstanceType:
     Description: Type of Instance the ASG will launch (e.g. m5.large)
     Type: String
@@ -15,6 +15,9 @@ Parameters:
     AllowedValues:
       - True
       - False
+  NotificationEmails:
+    Description: Email addresses that will be sent scaling notifications from the ASG (seperate by comma and no spaces for multiple)
+    Type: String    # Type can't be CommaDelimitedList because it doesnt work with Fn::Split
 
 Resources:
   # Site ASG Config
@@ -27,7 +30,13 @@ Resources:
       MaxSize: 10
       HealthCheckType: ELB
       LaunchTemplate: !Ref WebsiteLaunchTemplate
-      
+      # TargetGroupARNs: Ref TargetGroup here if connecting to ALB
+      NotificationConfigurations:
+        NotificationTypes: 
+          - autoscaling:EC2_INSTANCE_LAUNCH_ERROR
+          - autoscaling:EC2_INSTANCE_TERMINATE_ERROR
+        TopicARN: !Ref ScalingNotificationsSNS
+
 
 
   # Site ASG Launch Template
@@ -37,10 +46,10 @@ Resources:
       BlockDeviceMappings:
         - DeviceName: /dev/xvda
           Ebs:
-            VolumeSize: !Ref VolumeSize
+            VolumeSize: 8
             VolumeType: gp2
-      IamInstanceProfile: !Ref InstanceProfile
-      ImageID: !Ref AMI-ID
+      IamInstanceProfile: !Ref ASGInstanceProfile
+      ImageID: !Ref AMIID
       InstanceType: !Ref InstanceType
       SecurityGroupIds: !GetAtt ASGSecurityGroup.GroupId
       Monitoring: !Ref Monitoring
@@ -51,27 +60,28 @@ Resources:
   WebsitePlacementGroup:
     Type: AWS::EC2::PlacementGroup
     Properties: 
-      Strategy: Spread
+      Strategy: spread
 
   # ASG Security Group
   ASGSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Security Group used to control the inbound traffic to the ASG created EC2 instances.
-      GroupName: !Sub company-website-${Environment}-ASG-SG
+      GroupName: !Sub Website-ASG-SG
       SecurityGroupIngress:
       - IpProtocol: tcp
         Description: Allow HTTPS traffic from ALB-SG # Rule Descriptions dont seem to work, need to investigate this further
         FromPort: 80
         ToPort: 80
-        SourceSecurityGroupId: !GetAtt ALBSecurityGroup.GroupId
+        CidrIp: 0.0.0.0/0
       # - IpProtocol: tcp # Uncomment this rule & link RDS SG to allow traffic from DB if there is one
       #   Description: Allow MySQL traffic from RDS SecurityGroup
       #   FromPort: 3389
       #   ToPort: 3389
       #   SourceSecurityGroupId: # Database Security would be referenced here
 
-ASGInstancesSSMRole:
+  # Role that allows EC2 to connect to SSM
+  ASGInstancesSSMRole:
     Type: AWS::IAM::Role
     Properties:
       Description: IAM Role allowing instances inside the WebsiteASG to connect to SSM.
@@ -88,8 +98,8 @@ ASGInstancesSSMRole:
         - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
       RoleName: WebsiteASG-SSMRole
 
-  #Instance Profile for SSM Role
-  InstanceProfile:
+  # Instance Profile for SSM Role
+  ASGInstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
       InstanceProfileName: !Sub
@@ -97,3 +107,12 @@ ASGInstancesSSMRole:
         - { RoleName: !Ref ASGInstancesSSMRole }
       Roles: 
         - !Ref ASGInstancesSSMRole
+
+  # SNS Topic for ASG Scaling Notifications // Section does not work with inputting multiple emails as a sinple paramter input, might not be possible :(
+  ScalingNotificationsSNS:
+    Type: AWS::SNS::Topic
+    Properties: 
+      DisplayName: ASGScalingNotificationsTopic
+      Subscription:
+        - Endpoint: !Ref NotificationEmails
+          Protocol: email
