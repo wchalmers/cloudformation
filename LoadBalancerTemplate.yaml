@@ -210,6 +210,3 @@ Resources:
     Properties:
       ResourceArn: !Ref SiteApplicationLoadBalancer
       WebACLArn: !GetAtt SiteWAF.Arn
-
-
-# Output: ALB DNS Name !GetAtt DNSName
