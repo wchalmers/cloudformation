@@ -1,0 +1,34 @@
+# Example YAML document.
+
+#Block style example:
+---
+host: phl-42
+datacentre:
+  location: &PHL Philadelphia
+  cab: !!str 12     # !!str forces the datatype to be string (!! can be used to force other datatypes aswell)
+  cab_unit: !!str 3
+roles: &wphost
+  - webserver
+  - wp_database
+downtime_sch: |     # The pipe will keep the spaces between the lines (e.g. make sure they are seperated and not on the same line).
+  2018-10-31 - Kernel upgrade
+  2019-02-02 - security fix
+coments: >          # The angled bracket will remove the line spaces, making all the text below one line (commonly used to make it more readable for humans). Double indentation can be applied for a second line.
+  Experiancing high I/O
+  Since 2018-10-01.
+  Currently Investigating.
+---
+host: phl-43
+datacentre:
+  location: *PHL # This pulls the anchor from line 7.
+  cab: !!str 12 # !!str forces the datatype to be string (!! can be used to force other datatypes aswell)
+  cab_unit: !!str 3
+roles: *wphost # Pulls the anchor from line 10, it will still be formatted as a list.
+
+
+
+
+# Simple flow style example:
+host: phl-42
+datacentre: { location: philadelphia, cab: 13, cab_unit: 3 }
+roles: [ webserver, wp_database ]
