@@ -29,3 +29,8 @@ This contains examples of some YAML formatting and features that can be used whe
 - Serverless Template (Using AWS SAM)
 - Custom Resource Template
 - Nested Stack Template
+
+# Useful Links
+- Pseudo Parameters: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/pseudo-parameter-reference.html
+- Parameter Types: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/parameters-section-structure.html
+- Ref/GetAtt Cheatsheet: https://theburningmonk.com/cloudformation-ref-and-getatt-cheatsheet/
