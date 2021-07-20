@@ -6,6 +6,7 @@ Parameters:
   AMIID:
     Description: The ID of the AMI the ASG will use when launching new Instances.
     Type: List<AWS::EC2::Image::Id>
+    Default: ami-03ac5a9b225e99b02
   InstanceType:
     Description: Type of Instance the ASG will launch (e.g. m5.large)
     Type: String
@@ -15,9 +16,21 @@ Parameters:
     AllowedValues:
       - True
       - False
-  NotificationEmails:
-    Description: Email addresses that will be sent scaling notifications from the ASG (seperate by comma and no spaces for multiple)
-    Type: String    # Type can't be CommaDelimitedList because it doesnt work with Fn::Split
+  NotificationEmail:
+    Description: Email address that will be sent scaling notifications from the ASG (a single shared email is advised).
+    Type: String
+  Alarms:
+    Description: Select True to create CloudWatch Alarms for the ASG/Instances inside it.
+    Type: String
+    AllowedValues:
+      - True
+      - False
+
+Conditions:
+  # Determines if CloudWatch Alarms will be created or not (Based on Alarms parameter)
+  CWAlarms: !Equals
+    - !Ref Alarms
+    - True
 
 Resources:
   # Site ASG Config
@@ -37,24 +50,23 @@ Resources:
           - autoscaling:EC2_INSTANCE_TERMINATE_ERROR
         TopicARN: !Ref ScalingNotificationsSNS
 
-
-
   # Site ASG Launch Template
   WebsiteLaunchTemplate:
     Type: AWS::EC2::LaunchTemplate
     Properties:
-      BlockDeviceMappings:
-        - DeviceName: /dev/xvda
-          Ebs:
-            VolumeSize: 8
-            VolumeType: gp2
-      IamInstanceProfile: !Ref ASGInstanceProfile
-      ImageID: !Ref AMIID
-      InstanceType: !Ref InstanceType
-      SecurityGroupIds: !GetAtt ASGSecurityGroup.GroupId
-      Monitoring: !Ref Monitoring
-      Placement:
-        GroupName: !Ref WebsitePlacementGroup
+      LaunchTemplateData: 
+        BlockDeviceMappings:
+          - DeviceName: /dev/xvda
+            Ebs:
+              VolumeSize: 8
+              VolumeType: gp2
+        IamInstanceProfile: !Ref ASGInstanceProfile
+        ImageId: !Ref AMIID
+        InstanceType: !Ref InstanceType
+        SecurityGroupIds: !GetAtt ASGSecurityGroup.GroupId
+        Monitoring: !Ref Monitoring
+        Placement:
+          GroupName: !Ref WebsitePlacementGroup
 
   # Placement Group for Instances inside WebsiteASG
   WebsitePlacementGroup:
@@ -96,7 +108,7 @@ Resources:
               - 'sts:AssumeRole'
       ManagedPolicyArns: 
         - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
-      RoleName: WebsiteASG-SSMRole
+      RoleName: !Sub WebsiteASG-SSMRole-${AWS::AccountId}
 
   # Instance Profile for SSM Role
   ASGInstanceProfile:
@@ -108,11 +120,45 @@ Resources:
       Roles: 
         - !Ref ASGInstancesSSMRole
 
-  # SNS Topic for ASG Scaling Notifications // Section does not work with inputting multiple emails as a sinple paramter input, might not be possible :(
+  # SNS Topic for ASG Scaling Notifications
   ScalingNotificationsSNS:
     Type: AWS::SNS::Topic
     Properties: 
       DisplayName: ASGScalingNotificationsTopic
       Subscription:
-        - Endpoint: !Ref NotificationEmails
+        - Endpoint: !Ref NotificationEmail
           Protocol: email
+
+  CWAlarmCPUWarning:
+    Type: "AWS::CloudWatch::Alarm"
+    Condition: CWAlarms
+    Properties:
+      AlarmName: "EC2CPUWarning"
+      AlarmDescription: "A CloudWatch Alarm that triggers when the CPU utilisation of an instance is greater than 70%."
+      MetricName: "EC2InstanceEventCount"
+      Namespace: "CloudTrailMetrics"
+      Statistic: "Sum"
+      Period: "300"
+      EvaluationPeriods: "1"
+      Threshold: "1"
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      AlarmActions:
+        - Ref: ScalingNotificationsSNS
+      TreatMissingData: "notBreaching"
+
+  CWAlarmCPUCritical:
+    Type: "AWS::CloudWatch::Alarm"
+    Condition: CWAlarms
+    Properties:
+      AlarmName: "EC2CPUCritical"
+      AlarmDescription: "A CloudWatch Alarm that triggers when the CPU utilisation of an instance is greater than 90%."
+      MetricName: "EC2InstanceEventCount"
+      Namespace: "CloudTrailMetrics"
+      Statistic: "Sum"
+      Period: "300"
+      EvaluationPeriods: "3"
+      Threshold: "1"
+      ComparisonOperator: "GreaterThanOrEqualToThreshold"
+      AlarmActions:
+        - Ref: ScalingNotificationsSNS
+      TreatMissingData: "notBreaching"
