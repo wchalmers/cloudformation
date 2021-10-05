@@ -5,11 +5,21 @@ Description: ASG Setup with Instance Roles, ASGs, Launch Templates & Security Gr
 Parameters:
   AMIID:
     Description: The ID of the AMI the ASG will use when launching new Instances.
-    Type: List<AWS::EC2::Image::Id>
+    Type: String
     Default: ami-03ac5a9b225e99b02
+  ASGSubnet1:
+    Description: Subnets for ASG Instances to be placed in (Please select a subnet).
+    Type: AWS::EC2::Subnet::Id
+  ASGSubnet2:
+    Description: Subnets for ASG Instances to be placed in (Please select a subnet).
+    Type: AWS::EC2::Subnet::Id
+  ASGSubnet3: # This should be the same type as the above two Parameters, however the Condition fails if it is the subnet type and empty
+    Description: Subnets for ASG Instances to be placed in (This third subnet is optional).
+    Type: String
   InstanceType:
     Description: Type of Instance the ASG will launch (e.g. m5.large)
     Type: String
+    Default: t3.small
   Monitoring:
     Description: Select if Enhanced Monitoring should be enabled on the ASG Instances.
     Type: String
@@ -19,6 +29,7 @@ Parameters:
   NotificationEmail:
     Description: Email address that will be sent scaling notifications from the ASG (a single shared email is advised).
     Type: String
+    Default: test@example.com
   Alarms:
     Description: Select True to create CloudWatch Alarms for the ASG/Instances inside it.
     Type: String
@@ -31,6 +42,9 @@ Conditions:
   CWAlarms: !Equals
     - !Ref Alarms
     - True
+  # Sets to False if the ASGSubnet3 does not have an input
+  UseASG3:
+    !Not [!Equals ["", !Ref ASGSubnet3]]
 
 Resources:
   # Site ASG Config
@@ -41,14 +55,22 @@ Resources:
       MinSize: 1
       DesiredCapacity: 5
       MaxSize: 10
+      HealthCheckGracePeriod: 180
       HealthCheckType: ELB
-      LaunchTemplate: !Ref WebsiteLaunchTemplate
-      # TargetGroupARNs: Ref TargetGroup here if connecting to ALB
+      LaunchTemplate: 
+        LaunchTemplateId: !Ref WebsiteLaunchTemplate
+        Version: !GetAtt WebsiteLaunchTemplate.LatestVersionNumber
+      # TargetGroupARNs: 
+      #   - Ref TargetGroup here if connecting to ALB
+      VPCZoneIdentifier: 
+        - !Ref ASGSubnet1
+        - !Ref ASGSubnet2
+        - !If [UseASG3, !Ref ASGSubnet3, !Ref AWS::NoValue]
       NotificationConfigurations:
-        NotificationTypes: 
-          - autoscaling:EC2_INSTANCE_LAUNCH_ERROR
-          - autoscaling:EC2_INSTANCE_TERMINATE_ERROR
-        TopicARN: !Ref ScalingNotificationsSNS
+        - NotificationTypes: 
+            - autoscaling:EC2_INSTANCE_LAUNCH_ERROR
+            - autoscaling:EC2_INSTANCE_TERMINATE_ERROR
+          TopicARN: !Ref ScalingNotificationsSNS
 
   # Site ASG Launch Template
   WebsiteLaunchTemplate:
@@ -60,11 +82,14 @@ Resources:
             Ebs:
               VolumeSize: 8
               VolumeType: gp2
-        IamInstanceProfile: !Ref ASGInstanceProfile
+        IamInstanceProfile: 
+          Arn: !GetAtt ASGInstanceProfile.Arn
         ImageId: !Ref AMIID
         InstanceType: !Ref InstanceType
-        SecurityGroupIds: !GetAtt ASGSecurityGroup.GroupId
-        Monitoring: !Ref Monitoring
+        SecurityGroupIds:
+          - !GetAtt ASGSecurityGroup.GroupId
+        Monitoring:
+          Enabled: !Ref Monitoring
         Placement:
           GroupName: !Ref WebsitePlacementGroup
 
@@ -129,6 +154,7 @@ Resources:
         - Endpoint: !Ref NotificationEmail
           Protocol: email
 
+  # CPU Warning CloudWatch Alarm
   CWAlarmCPUWarning:
     Type: "AWS::CloudWatch::Alarm"
     Condition: CWAlarms
@@ -146,6 +172,7 @@ Resources:
         - Ref: ScalingNotificationsSNS
       TreatMissingData: "notBreaching"
 
+  # CPU Critical CloudWatch Alarm
   CWAlarmCPUCritical:
     Type: "AWS::CloudWatch::Alarm"
     Condition: CWAlarms

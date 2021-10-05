@@ -5,17 +5,19 @@ Repo containing all self-created, personal CloudFormation Templates.
 ## EC2InstanceTemplate
 Creates an EC2 instance, bootstraps instance to update the Message of the day, uses cfn-signal to confirm bootstrapping has completed & creates + attaches SSM Role
 
-**Uses:** Parameters, EC2, cfn-signal, IAM Role, Instance Profile, Outputs <br />
+**Uses:** Parameters, cfn-signal, IAM Role, EC2, Instance Profile, Outputs <br />
 **Future Updates:** Include cfn-init & cfn-hup.
 
 
 ## LoadBalancerTemplate
-Creates an ALB with Listners, Listner rules, attached WAF, Target Groups & Security Groups
+Creates an ALB with Listners, Listner rules, Attached WAF, Target Groups & Security Groups
 
 **Uses:** ALB, ALB Listner, ALB Listner Rule, WAF (+ WAF Association), Security Groups, Target Groups <br />
 
 ## ASG Template
-**Still WIP** Once complete, it will create an ASG, Launch Templates, Security Groups & IAM Roles (and Instance Profiles) & SNS Topic (with ASG alarms).
+Creates an ASG, Launch Templates, Security Group, Placement Group & IAM Roles (and Instance Profiles) & SNS Topic (with ASG alarms).
+
+**Uses:** Conditions, !If/!Not/!Equals/!Sub Statements, CloudWatch Alarms & All services listed above
 
 
 ## VPCTemplate
@@ -26,6 +28,7 @@ This contains examples of some YAML formatting and features that can be used whe
 
 # Future Templates:
 - CI/CD Pipeline Template (CodePipeline, CodeBuild, CodeDeploy etc)
+- Something with metadata and setting up parameters with labels
 - Serverless Template (Using AWS SAM)
 - Custom Resource Template
 - Nested Stack Template
