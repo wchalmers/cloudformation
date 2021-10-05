@@ -6,15 +6,24 @@ Description: ---
 Resources: 
 
 #VPC (IPv4 & IPv6)
+#IP Range 10.15.0.0/16
 
 # Subnet 1 (Public)
+#IP Range 10.15.0.0/24
+
 
 # Subnet 2 (Public)
+#IP Range 10.15.1.0/24
+
 
 # Subnet 3 (Private)
+#IP Range 10.15.2.0/24
+
 
 # Subnet 4 (Private)
+#IP Range 10.15.3.0/24
+
 
 # Internet Gateway
 
-#Other things: Security Groups, NACLs, Route Tables, Gateway/Interface Endpoint, NAT Gateway, egress only IGW
+#Other things: Security Groups, NACLs, Route Tables, Gateway/Interface Endpoint, NAT Gateway, egress only IGW, R53
