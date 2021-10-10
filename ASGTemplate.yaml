@@ -5,8 +5,7 @@ Description: ASG Setup with Instance Roles, ASGs, Launch Templates & Security Gr
 Parameters:
   AMIID:
     Description: The ID of the AMI the ASG will use when launching new Instances.
-    Type: String
-    Default: ami-03ac5a9b225e99b02
+    Type: AWS::EC2::Image::Id
   ASGSubnet1:
     Description: Subnets for ASG Instances to be placed in (Please select a subnet).
     Type: AWS::EC2::Subnet::Id
@@ -115,7 +114,7 @@ Resources:
       #   Description: Allow MySQL traffic from RDS SecurityGroup
       #   FromPort: 3389
       #   ToPort: 3389
-      #   SourceSecurityGroupId: # Database Security would be referenced here
+      #   SourceSecurityGroupId: # Database Security would be referenced/input here
 
   # Role that allows EC2 to connect to SSM
   ASGInstancesSSMRole:
