@@ -5,25 +5,103 @@ Description: ---
 
 Resources: 
 
-#VPC (IPv4 & IPv6)
-#IP Range 10.15.0.0/16
+  #VPC (IPv4 & IPv6)
+  #IP Range 10.15.0.0/16
+  CompanyVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.15.0.0/16
+      EnableDnsHostnames: True
+      EnableDnsSupport: True
+      Tags:
+        - Key: Name
+          Value: CompanyVPC
 
-# Subnet 1 (Public)
-#IP Range 10.15.0.0/24
+  #IPv6 address block for VPC/Subnets
+  IPv6Addresses:
+    Type: AWS::EC2::VPCCidrBlock
+    Properties: 
+      AmazonProvidedIpv6CidrBlock: True
+      VpcId: !Ref CompanyVPC
+
+  # Subnet 1 (Public)
+  #IP Range 10.15.0.0/24
+  PublicSubnetA:
+    Type: AWS::EC2::Subnet
+    DependsOn: IPv6Addresses #Forced dependancy as it's not automatically known
+    Properties:
+      AssignIpv6AddressOnCreation: True
+      VpcId: !Ref CompanyVPC
+      CidrBlock: 10.15.0.0/24
+      Ipv6CidrBlock: 
+        Fn::Sub: # Takes the IPv6 range from VPC, removes the subnet part of the range, and adds a smaller subnet part as this is the range for the subnet.
+          - "${VpcPart}${SubnetPart}"
+          - SubnetPart: '00::/64'
+            VpcPart: !Select [ 0, !Split [ '00::/56', !Select [ 0, !GetAtt CompanyVPC.Ipv6CidrBlocks ]]]
+      Tags:
+        - Key: Name
+          Value: Public-SN-A
+
+  # Subnet 2 (Public)
+  #IP Range 10.15.1.0/24
+  PublicSubnetB:
+    Type: AWS::EC2::Subnet
+    DependsOn: IPv6Addresses #Forced dependancy as it's not automatically known
+    Properties:
+      AssignIpv6AddressOnCreation: True
+      VpcId: !Ref CompanyVPC
+      CidrBlock: 10.15.1.0/24
+      Ipv6CidrBlock: 
+        Fn::Sub: # Takes the IPv6 range from VPC, removes the subnet part of the range, and adds a smaller subnet part as this is the range for the subnet.
+          - "${VpcPart}${SubnetPart}"
+          - SubnetPart: '01::/64'
+            VpcPart: !Select [ 0, !Split [ '00::/56', !Select [ 0, !GetAtt CompanyVPC.Ipv6CidrBlocks ]]]
+      Tags:
+        - Key: Name
+          Value: Public-SN-B
+
+  # Subnet 3 (Private)
+  #IP Range 10.15.2.0/24
+  PrivateSubnetA:
+    Type: AWS::EC2::Subnet
+    DependsOn: IPv6Addresses #Forced dependancy as it's not automatically known
+    Properties:
+      AssignIpv6AddressOnCreation: True
+      VpcId: !Ref CompanyVPC
+      CidrBlock: 10.15.2.0/24
+      Ipv6CidrBlock: 
+        Fn::Sub: # Takes the IPv6 range from VPC, removes the subnet part of the range, and adds a smaller subnet part as this is the range for the subnet.
+          - "${VpcPart}${SubnetPart}"
+          - SubnetPart: '02::/64'
+            VpcPart: !Select [ 0, !Split [ '00::/56', !Select [ 0, !GetAtt CompanyVPC.Ipv6CidrBlocks ]]]
+      Tags:
+        - Key: Name
+          Value: Private-SN-A
+
+  # Subnet 4 (Private)
+  #IP Range 10.15.3.0/24
+  PrivateSubnetB:
+    Type: AWS::EC2::Subnet
+    DependsOn: IPv6Addresses #Forced dependancy as it's not automatically known
+    Properties:
+      AssignIpv6AddressOnCreation: True
+      VpcId: !Ref CompanyVPC
+      CidrBlock: 10.15.3.0/24
+      Ipv6CidrBlock: 
+        Fn::Sub: # Takes the IPv6 range from VPC, removes the subnet part of the range, and adds a smaller subnet part as this is the range for the subnet.
+          - "${VpcPart}${SubnetPart}"
+          - SubnetPart: '03::/64'
+            VpcPart: !Select [ 0, !Split [ '00::/56', !Select [ 0, !GetAtt CompanyVPC.Ipv6CidrBlocks ]]]
+      Tags:
+        - Key: Name
+          Value: Private-SN-B
+
+  # Internet Gateway
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
 
 
-# Subnet 2 (Public)
-#IP Range 10.15.1.0/24
+# Next, Route tables
 
-
-# Subnet 3 (Private)
-#IP Range 10.15.2.0/24
-
-
-# Subnet 4 (Private)
-#IP Range 10.15.3.0/24
-
-
-# Internet Gateway
 
 #Other things: Security Groups, NACLs, Route Tables, Gateway/Interface Endpoint, NAT Gateway, egress only IGW, R53
