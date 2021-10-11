@@ -1,14 +1,13 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: Application Load Balancer setup with ALB, Listners, TGs & WAF
 
-
-Parameters: 
+Parameters:
   Environment:
     Description: Environment this stack is being deployed in.
     Type: String
     Default: Test
     AllowedValues:
-      - Dev 
+      - Dev
       - Test
       - UAT
       - Stage
@@ -24,8 +23,7 @@ Parameters:
     Type: String
     Default: arn:aws:acm:eu-west-2:192984629876:certificate/5b15f225-b91c-4461-bb8d-314e6be93d7b #Used for ease of test deployments, should be removed when template is complete
 
-
-Resources: 
+Resources:
   # Application Load Balancer, which will be the front end of this stack
   SiteApplicationLoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
@@ -43,16 +41,16 @@ Resources:
       GroupDescription: !Sub Security Group used to control the inbound traffic to the company-website-${Environment} ALB.
       GroupName: !Sub company-website-${Environment}-ALB-SG
       SecurityGroupIngress:
-      - IpProtocol: tcp
-        Description: Allow all traffic from Port 80 # Rule Descriptions dont seem to work, need to investigate this further
-        CidrIp: 0.0.0.0/0
-        FromPort: 80
-        ToPort: 80
-      - IpProtocol: tcp
-        Description: Allow all traffic from Port 443 # Rule Descriptions dont seem to work, need to investigate this further
-        CidrIp: 0.0.0.0/0
-        FromPort: 443
-        ToPort: 443
+        - IpProtocol: tcp
+          Description: Allow all traffic from Port 80 # Rule Descriptions dont seem to work, need to investigate this further
+          CidrIp: 0.0.0.0/0
+          FromPort: 80
+          ToPort: 80
+        - IpProtocol: tcp
+          Description: Allow all traffic from Port 443 # Rule Descriptions dont seem to work, need to investigate this further
+          CidrIp: 0.0.0.0/0
+          FromPort: 443
+          ToPort: 443
 
   # Main Site TargetGroup
   SiteMainTargetGroup:
@@ -121,22 +119,20 @@ Resources:
       Priority: 1
       ListenerArn: !Ref ALBListnerHTTPS
       Conditions:
-      - # Dash is used here to turn below into an array to avoid CF erors when deploying (Same with the dash under "Actions" & "TargetGroups" in the below lines)
-        Field: "path-pattern"
-        Values:
-          - "/shop"
-          - "/shop/*"
+        - # Dash is used here to turn below into an array to avoid CF erors when deploying (Same with the dash under "Actions" & "TargetGroups" in the below lines)
+          Field: "path-pattern"
+          Values:
+            - "/shop"
+            - "/shop/*"
       Actions:
-      -
-        Type: "forward"
-        TargetGroupArn: !Ref SiteShopTargetGroup
-        ForwardConfig:
-          TargetGroups:
-          -
-            TargetGroupArn: !Ref SiteShopTargetGroup
-            Weight: 1
-          TargetGroupStickinessConfig:
-            Enabled: False
+        - Type: "forward"
+          TargetGroupArn: !Ref SiteShopTargetGroup
+          ForwardConfig:
+            TargetGroups:
+              - TargetGroupArn: !Ref SiteShopTargetGroup
+                Weight: 1
+            TargetGroupStickinessConfig:
+              Enabled: False
 
   # Listner Rule - Host Based
   ListnerRuleHostHeader:
@@ -145,21 +141,19 @@ Resources:
       Priority: 2
       ListenerArn: !Ref ALBListnerHTTPS
       Conditions:
-      - # Dash is used here to turn below into an array to avoid CF erors when deploying (Same with the dash under "Actions" & "TargetGroups" in the below lines)
-        Field: "host-header"
-        Values:
-        - "shop*.*"
+        - # Dash is used here to turn below into an array to avoid CF erors when deploying (Same with the dash under "Actions" & "TargetGroups" in the below lines)
+          Field: "host-header"
+          Values:
+            - "shop*.*"
       Actions:
-      -
-        Type: "forward"
-        TargetGroupArn: !Ref SiteShopTargetGroup
-        ForwardConfig:
-          TargetGroups:
-          -
-            TargetGroupArn: !Ref SiteShopTargetGroup
-            Weight: 1
-          TargetGroupStickinessConfig:
-            Enabled: False
+        - Type: "forward"
+          TargetGroupArn: !Ref SiteShopTargetGroup
+          ForwardConfig:
+            TargetGroups:
+              - TargetGroupArn: !Ref SiteShopTargetGroup
+                Weight: 1
+            TargetGroupStickinessConfig:
+              Enabled: False
 
   # WAF Config
   SiteWAF:
@@ -179,7 +173,7 @@ Resources:
           Priority: 1
           OverrideAction:
             Count: {}
-          VisibilityConfig: 
+          VisibilityConfig:
             CloudWatchMetricsEnabled: True
             SampledRequestsEnabled: True
             MetricName: WAFCoreRuleSetMetric
@@ -191,7 +185,7 @@ Resources:
           Priority: 2
           OverrideAction:
             Count: {}
-          VisibilityConfig: 
+          VisibilityConfig:
             CloudWatchMetricsEnabled: True
             SampledRequestsEnabled: True
             MetricName: WAFBlockSQLInjectionMetric
@@ -199,7 +193,7 @@ Resources:
             ManagedRuleGroupStatement:
               VendorName: AWS # AWS Managed Rule Details can be found here -> https://docs.aws.amazon.com/waf/latest/developerguide/aws-managed-rule-groups-list.html
               Name: AWSManagedRulesSQLiRuleSet
-      VisibilityConfig: 
+      VisibilityConfig:
         CloudWatchMetricsEnabled: True
         SampledRequestsEnabled: True
         MetricName: WAFWebACLMetric

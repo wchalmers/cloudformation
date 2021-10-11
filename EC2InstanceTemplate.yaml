@@ -21,8 +21,8 @@ Parameters:
 
   ImageID:
     Description: AMI for EC2 Instance to use.
-    Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
-    Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
+    Type: "AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>"
+    Default: "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
 
   KeyPair:
     Description: KeyPair for EC2 Instance to use.
@@ -42,9 +42,7 @@ Parameters:
     Type: String
     Default: WebServer
 
-
-
-Resources: 
+Resources:
   # Web Server with CFN-Signal to validate user-data completion
   WebServer:
     Type: AWS::EC2::Instance
@@ -98,8 +96,8 @@ Resources:
               Service:
                 - ec2.amazonaws.com
             Action:
-              - 'sts:AssumeRole'
-      ManagedPolicyArns: 
+              - "sts:AssumeRole"
+      ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
       RoleName: !Sub
         - ${InstanceName}-SSMRole
@@ -115,9 +113,8 @@ Resources:
       InstanceProfileName: !Sub
         - ${InstanceName}-InstanceProfile
         - { InstanceName: !Ref InstanceName }
-      Roles: 
+      Roles:
         - !Ref WebServerSSMRole
-
 
 Outputs:
   #WebServer InstanceID Output & Export

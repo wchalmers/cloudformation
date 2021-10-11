@@ -1,7 +1,6 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: ASG Setup with Instance Roles, ASGs, Launch Templates & Security Groups.
 
-
 Parameters:
   AMIID:
     Description: The ID of the AMI the ASG will use when launching new Instances.
@@ -42,31 +41,30 @@ Conditions:
     - !Ref Alarms
     - True
   # Sets to False if the ASGSubnet3 does not have an input
-  UseASG3:
-    !Not [!Equals ["", !Ref ASGSubnet3]]
+  UseASG3: !Not [!Equals ["", !Ref ASGSubnet3]]
 
 Resources:
   # Site ASG Config
   WebsiteASG:
     Type: AWS::AutoScaling::AutoScalingGroup
-    Properties: 
+    Properties:
       AutoScalingGroupName: SiteASG
       MinSize: 1
       DesiredCapacity: 5
       MaxSize: 10
       HealthCheckGracePeriod: 180
       HealthCheckType: ELB
-      LaunchTemplate: 
+      LaunchTemplate:
         LaunchTemplateId: !Ref WebsiteLaunchTemplate
         Version: !GetAtt WebsiteLaunchTemplate.LatestVersionNumber
-      # TargetGroupARNs: 
+      # TargetGroupARNs:
       #   - Ref TargetGroup here if connecting to ALB
-      VPCZoneIdentifier: 
+      VPCZoneIdentifier:
         - !Ref ASGSubnet1
         - !Ref ASGSubnet2
         - !If [UseASG3, !Ref ASGSubnet3, !Ref AWS::NoValue]
       NotificationConfigurations:
-        - NotificationTypes: 
+        - NotificationTypes:
             - autoscaling:EC2_INSTANCE_LAUNCH_ERROR
             - autoscaling:EC2_INSTANCE_TERMINATE_ERROR
           TopicARN: !Ref ScalingNotificationsSNS
@@ -75,13 +73,13 @@ Resources:
   WebsiteLaunchTemplate:
     Type: AWS::EC2::LaunchTemplate
     Properties:
-      LaunchTemplateData: 
+      LaunchTemplateData:
         BlockDeviceMappings:
           - DeviceName: /dev/xvda
             Ebs:
               VolumeSize: 8
               VolumeType: gp2
-        IamInstanceProfile: 
+        IamInstanceProfile:
           Arn: !GetAtt ASGInstanceProfile.Arn
         ImageId: !Ref AMIID
         InstanceType: !Ref InstanceType
@@ -95,7 +93,7 @@ Resources:
   # Placement Group for Instances inside WebsiteASG
   WebsitePlacementGroup:
     Type: AWS::EC2::PlacementGroup
-    Properties: 
+    Properties:
       Strategy: spread
 
   # ASG Security Group
@@ -105,11 +103,11 @@ Resources:
       GroupDescription: Security Group used to control the inbound traffic to the ASG created EC2 instances.
       GroupName: Website-ASG-SG
       SecurityGroupIngress:
-      - IpProtocol: tcp
-        Description: Allow HTTPS traffic from ALB-SG # Rule Descriptions dont seem to work, need to investigate this further
-        FromPort: 80
-        ToPort: 80
-        CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          Description: Allow HTTPS traffic from ALB-SG # Rule Descriptions dont seem to work, need to investigate this further
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
       # - IpProtocol: tcp # Uncomment this rule & link RDS SG to allow traffic from DB if there is one
       #   Description: Allow MySQL traffic from RDS SecurityGroup
       #   FromPort: 3389
@@ -129,8 +127,8 @@ Resources:
               Service:
                 - ec2.amazonaws.com
             Action:
-              - 'sts:AssumeRole'
-      ManagedPolicyArns: 
+              - "sts:AssumeRole"
+      ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
       RoleName: !Sub WebsiteASG-SSMRole-${AWS::AccountId}
 
@@ -141,13 +139,13 @@ Resources:
       InstanceProfileName: !Sub
         - ${RoleName}-InstanceProfile
         - { RoleName: !Ref ASGInstancesSSMRole }
-      Roles: 
+      Roles:
         - !Ref ASGInstancesSSMRole
 
   # SNS Topic for ASG Scaling Notifications
   ScalingNotificationsSNS:
     Type: AWS::SNS::Topic
-    Properties: 
+    Properties:
       DisplayName: ASGScalingNotificationsTopic
       Subscription:
         - Endpoint: !Ref NotificationEmail
