@@ -5,8 +5,8 @@ Description: ---
 
 Resources: 
 
-  #VPC (IPv4 & IPv6)
-  #IP Range 10.15.0.0/16
+  # VPC (IPv4 & IPv6)
+  # IP Range 10.15.0.0/16
   CompanyVPC:
     Type: AWS::EC2::VPC
     Properties:
@@ -25,7 +25,7 @@ Resources:
       VpcId: !Ref CompanyVPC
 
   # Subnet 1 (Public)
-  #IP Range 10.15.0.0/24
+  # IP Range 10.15.0.0/24
   PublicSubnetA:
     Type: AWS::EC2::Subnet
     DependsOn: IPv6Addresses #Forced dependancy as it's not automatically known
@@ -43,7 +43,7 @@ Resources:
           Value: Public-SN-A
 
   # Subnet 2 (Public)
-  #IP Range 10.15.1.0/24
+  # IP Range 10.15.1.0/24
   PublicSubnetB:
     Type: AWS::EC2::Subnet
     DependsOn: IPv6Addresses #Forced dependancy as it's not automatically known
@@ -61,7 +61,7 @@ Resources:
           Value: Public-SN-B
 
   # Subnet 3 (Private)
-  #IP Range 10.15.2.0/24
+  # IP Range 10.15.2.0/24
   PrivateSubnetA:
     Type: AWS::EC2::Subnet
     DependsOn: IPv6Addresses #Forced dependancy as it's not automatically known
@@ -79,7 +79,7 @@ Resources:
           Value: Private-SN-A
 
   # Subnet 4 (Private)
-  #IP Range 10.15.3.0/24
+  # IP Range 10.15.3.0/24
   PrivateSubnetB:
     Type: AWS::EC2::Subnet
     DependsOn: IPv6Addresses #Forced dependancy as it's not automatically known
@@ -96,12 +96,57 @@ Resources:
         - Key: Name
           Value: Private-SN-B
 
-  # Internet Gateway
+  # Internet Gateway + Attachment to VPC
   InternetGateway:
     Type: AWS::EC2::InternetGateway
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties: 
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref CompanyVPC
+
+  # Route Table & Associations to public subnets
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref CompanyVPC
+      Tags: 
+        - Key: Name
+          Value: Public-SN-A-RT
+  PublicSubnetARouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: 
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnetA
+  PublicSubnetBRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: 
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnetB
+
+  # Route Table & Associations to private subnets
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties: 
+      VpcId: !Ref CompanyVPC
+      Tags: 
+        - Key: Name
+          Value: Private-SN-A-RT
+  PrivateSubnetARouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: 
+      RouteTableId: !Ref PrivateRouteTable
+      SubnetId: !Ref PrivateSubnetA
+  PrivateSubnetBRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: 
+      RouteTableId: !Ref PrivateRouteTable
+      SubnetId: !Ref PrivateSubnetB
 
 
-# Next, Route tables
 
 
-#Other things: Security Groups, NACLs, Route Tables, Gateway/Interface Endpoint, NAT Gateway, egress only IGW, R53
+# Next: NACLs & Egress only IGW
+
+
+#Other things: Security Groups, NACLs, Gateway/Interface Endpoint, NAT Gateway, egress only IGW, R53
