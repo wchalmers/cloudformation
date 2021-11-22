@@ -28,9 +28,10 @@ Resources:
   # IP Range 10.15.0.0/24
   PublicSubnetA:
     Type: AWS::EC2::Subnet
-    DependsOn: IPv6Addresses #Forced dependancy as it's not automatically known
+    DependsOn: IPv6Addresses # Forced dependancy as it's not automatically known
     Properties:
       AssignIpv6AddressOnCreation: True
+      AvailabilityZone: !Sub ${AWS::Region}a
       VpcId: !Ref CompanyVPC
       CidrBlock: 10.15.0.0/24
       Ipv6CidrBlock: 
@@ -46,9 +47,10 @@ Resources:
   # IP Range 10.15.1.0/24
   PublicSubnetB:
     Type: AWS::EC2::Subnet
-    DependsOn: IPv6Addresses #Forced dependancy as it's not automatically known
+    DependsOn: IPv6Addresses # Forced dependancy as it's not automatically known
     Properties:
       AssignIpv6AddressOnCreation: True
+      AvailabilityZone: !Sub ${AWS::Region}b
       VpcId: !Ref CompanyVPC
       CidrBlock: 10.15.1.0/24
       Ipv6CidrBlock: 
@@ -64,9 +66,10 @@ Resources:
   # IP Range 10.15.2.0/24
   PrivateSubnetA:
     Type: AWS::EC2::Subnet
-    DependsOn: IPv6Addresses #Forced dependancy as it's not automatically known
+    DependsOn: IPv6Addresses # Forced dependancy as it's not automatically known
     Properties:
       AssignIpv6AddressOnCreation: True
+      AvailabilityZone: !Sub ${AWS::Region}a
       VpcId: !Ref CompanyVPC
       CidrBlock: 10.15.2.0/24
       Ipv6CidrBlock: 
@@ -82,9 +85,10 @@ Resources:
   # IP Range 10.15.3.0/24
   PrivateSubnetB:
     Type: AWS::EC2::Subnet
-    DependsOn: IPv6Addresses #Forced dependancy as it's not automatically known
+    DependsOn: IPv6Addresses # Forced dependancy as it's not automatically known
     Properties:
       AssignIpv6AddressOnCreation: True
+      AvailabilityZone: !Sub ${AWS::Region}b
       VpcId: !Ref CompanyVPC
       CidrBlock: 10.15.3.0/24
       Ipv6CidrBlock: 
@@ -233,8 +237,59 @@ Resources:
       ResourceType: VPC
       TrafficType: ALL
 
+  # Gateway Endpoint
+  S3GatewayEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties: 
+      PolicyDocument: |
+        {
+          "Id": "Policy1637618017576",
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "Allow Basic S3 Operations",
+              "Action": [
+                "s3:ListBucket",
+                "s3:GetObject",
+                "s3:PutObject"
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                "arn:aws:s3:::example-bucket",
+                "arn:aws:s3:::example-bucket/*"
+              ],
+              "Principal": "*"
+            }
+          ]
+        }
+      RouteTableIds: 
+        - !Ref PrivateRouteTable
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.s3
+      VpcEndpointType: Gateway
+      VpcId: !Ref CompanyVPC
 
-# Next: Gateway/Interface Endpoints
+  # Interface Endpoint
+  SSMInterfaceEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties: 
+      PrivateDnsEnabled: True
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.ssm
+      SubnetIds: 
+        - !Ref PrivateSubnetA
+        - !Ref PrivateSubnetB
+      VpcEndpointType: Interface
+      VpcId: !Ref CompanyVPC
 
+  # NAT Gateway & EIP
+  CompanyNATGateway:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NATGatewayEIP.AllocationId
+      ConnectivityType: public
+      SubnetId: !Ref PublicSubnetA
+  NATGatewayEIP:
+    Type: AWS::EC2::EIP
+    Properties: 
+      Domain: !Ref CompanyVPC
 
-# Other things: NAT Gateway, R53
+# Other things: Route53
