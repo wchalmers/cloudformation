@@ -1,0 +1,41 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: ---
+
+
+Metadata: 
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          Default: 1. General
+        Parameters:
+          - Project
+          - Environment
+      - Label:
+          Default: 2. Upstream
+        Parameters:
+          - UpstreamStack
+      - Label:
+          Default: 3. CodeBuild Details
+        Parameters:
+          - CodeBuildEnvironment
+          - CodeBuildGitHubRepository
+          - CodeBuildGitHubRepositoryOwner
+          - CodeBuildGitHubAuthToken
+          - CodeBuildGitHubBranch
+          - PipelineName
+          - InspectorLambdaName
+          - Source Bucket
+    ParameterLabels:
+      PipelineName:
+        Default: "Pipeline name?"
+      CodeBuildEnvironment:
+        Default: Should i use a different Docker Image?
+
+
+Parameters: 
+
+# Make params with all settings: allowed values, min/max length, default value, noecho, 
+
+# Make param using SSM, do this using Type: AWS::SSM::Parameter::Value<String> and then the value or default would be the parameter pathname
+
+Resources: 
