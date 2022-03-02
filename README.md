@@ -31,8 +31,7 @@ This contains examples of parameter formatting through the metadata section, asw
 
 
 # Future Templates:
-- CI/CD Pipeline Template (CodePipeline, CodeBuild, CodeDeploy etc)
-- Something with metadata and setting up parameters with labels
+- CI/CD Pipeline Template (CodePipeline, CodeBuild, CodeDeploy etc) - This will probably be a simple pipeline that deploys some cfn templates.
 - Serverless Template (Using AWS SAM)
 - Custom Resource Template
 - Nested Stack Template
