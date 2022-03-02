@@ -26,6 +26,10 @@ Only the outline of this template has been created. Comment lines state what ser
 ## Example File
 This contains examples of some YAML formatting and features that can be used when writing YAML templates (note, some of these may not work within CloudFormation)
 
+## Parameters Template
+This contains examples of parameter formatting through the metadata section, aswell as the different types of parameters & their settings.
+
+
 # Future Templates:
 - CI/CD Pipeline Template (CodePipeline, CodeBuild, CodeDeploy etc)
 - Something with metadata and setting up parameters with labels
