@@ -2,6 +2,13 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: ---
 
 
+Parameters:
+  HostedZoneID:
+    Type: String
+  HostedZoneDomainName:
+    Type: String
+    Default: companydomain.com
+
 
 Resources: 
 
@@ -292,4 +299,38 @@ Resources:
     Properties: 
       Domain: !Ref CompanyVPC
 
-# Other things: Route53
+  # CNAME DNS Record that will return the ID of the VPC
+  VPCDNSRecord1:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      Type: CNAME
+      TTL: 500
+      HostedZoneID: !Ref HostedZoneID
+      Name: !Sub
+        - VPCID.${DomainName}
+        - { DomainName: !Ref HostedZoneDomainName}
+      ResourceRecords: !Ref CompanyVPC 
+
+  # CNAME DNS Record that will return the PublicSubnetA ID
+  SubnetDNSRecord1:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      Type: CNAME
+      TTL: 500
+      HostedZoneID: !Ref HostedZoneID
+      Name: !Sub
+        - PubSubA.${DomainName}
+        - { DomainName: !Ref HostedZoneDomainName}
+      ResourceRecords: !Ref PublicSubnetA 
+
+  # CNAME DNS Record that will return the PublicSubnetB ID
+  SubnetDNSRecord2:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      Type: CNAME
+      TTL: 500
+      HostedZoneID: !Ref HostedZoneID
+      Name: !Sub
+        - PubSubB.${DomainName}
+        - { DomainName: !Ref HostedZoneDomainName}
+      ResourceRecords: !Ref PublicSubnetB

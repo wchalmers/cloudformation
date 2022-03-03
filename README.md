@@ -21,7 +21,7 @@ Creates an ASG, Launch Templates, Security Group, Placement Group & IAM Roles (a
 
 
 ## VPCTemplate
-Only the outline of this template has been created. Comment lines state what services will be used in this stack.
+Template that creates a full VPC With 4 Subnets, IPv4, IPv6 aswell as other attachments such as a NatGateway, Route53 Records, Flowlogs & Endpoints.
 
 ## Example File
 This contains examples of some YAML formatting and features that can be used when writing YAML templates (note, some of these may not work within CloudFormation)
