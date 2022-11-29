@@ -41,3 +41,4 @@ This contains examples of parameter formatting through the metadata section, asw
 - [Parameter Types](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/parameters-section-structure.html)
 - [Ref/GetAtt Cheatsheet](https://theburningmonk.com/cloudformation-ref-and-getatt-cheatsheet/)
 - [CloudFormation Drift Detection Supported Resources](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/resource-import-supported-resources.html)
+- [CloudFormation Best Practices](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/best-practices.html)
