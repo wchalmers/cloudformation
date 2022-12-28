@@ -8,20 +8,20 @@ Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
       - Label:
-          Default: 1. General Details
+          default: 1. General Details
         Parameters:
           - Project
-          - Environment
+          - Env
           - Owner
       - Label:
-          Default: 2. VPC Details
+          default: 2. VPC Details
         Parameters:
           - VPCID
           - SubnetID-1
           - SubnetID-2
           - SubnetID-3
       - Label:
-          Default: 3. CodeBuild Details
+          default: 3. CodeBuild Details
         Parameters:
           - CodeBuildEnvironment
           - CodeBuildGitHubRepository
@@ -30,9 +30,11 @@ Metadata:
           - CodeBuildGitHubBranch
     ParameterLabels:
       PipelineName:
-        Default: "Pipeline name?"
+        default: "Pipeline name?"
       CodeBuildEnvironment:
-        Default: Should i use a different Docker Image?
+        default: Should i use a different Docker Image?
+      Env:
+        default: Environment
 
 
 Parameters: 
@@ -57,3 +59,5 @@ Parameters:
     MaxLength: 1 # Specifies a maximum length the paramter must be
     # The above two can be changed to 'Value' instead of 'Length' if the parameter type is number
     NoEcho: False # This will hide the parameter value in the cfn console, good for passwords, api keys etc.
+    AllowedPattern: 'db\.[a-zA-Z\d]{2,4}\.[a-zA-Z\d\.]{5,18}' # This is a regex pattern that only allows valid EC2 instance types to be entered
+    ConstraintDescription: Must be a valid RDS Instance Type # This is a description of the pattern above
