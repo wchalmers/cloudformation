@@ -49,7 +49,7 @@ Parameters:
   # This parameter shows all the options that can be added under a parameter
   ParameterOptionsExample:
     Type: String
-    Allowed Values: # This presents a list in the cfn console that only allows the options listed to be selected
+    AllowedValues: # This presents a list in the cfn console that only allows the options listed to be selected
       - Value1
       - Value2
       - Value3
@@ -61,3 +61,10 @@ Parameters:
     NoEcho: False # This will hide the parameter value in the cfn console, good for passwords, api keys etc.
     AllowedPattern: 'db\.[a-zA-Z\d]{2,4}\.[a-zA-Z\d\.]{5,18}' # This is a regex pattern that only allows valid EC2 instance types to be entered
     ConstraintDescription: Must be a valid RDS Instance Type # This is a description of the pattern above
+
+Resources:
+  # Resolve value from SSM Parameter
+  MyBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      Name: !Sub '{{resolve:ssm:/path/to/parameter:1}}'
