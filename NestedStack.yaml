@@ -1,0 +1,26 @@
+Parameters:
+  SourceBucket:
+    Type: String
+    Description: S3 bucket name where CF templates are stored
+  InspectorLambdaName:
+    Type: String
+    Description: Name of the inspector lambda
+    Default: "InspectorRun"
+  SecurityGroupIDs:
+    Type: String
+  SubnetIDs:
+    Type: String
+
+
+Resources:
+  InspectorLambdaStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub 'https://${SourceBucket}.s3.amazonaws.com/lambda.yaml'
+      TimeoutInMinutes: 30
+      # Below are all the parameters CFN will pass to the stack
+      Parameters:
+        SourceBucket: !Ref SourceBucket
+        VPCSubnetIDs: !Ref SubnetIDs
+        VPCSecurityGroupIDs: !Ref SecurityGroupIDs
+        LambdaName: !Ref InspectorLambdaName
