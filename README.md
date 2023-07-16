@@ -20,7 +20,7 @@ Creates an ASG, Launch Templates, Security Group, Placement Group & IAM Roles (a
 **Uses:** Conditions, !If/!Not/!Equals/!Sub Statements, CloudWatch Alarms & All services listed above
 
 
-## VPCTemplate
+## VPC Template
 Template that creates a full VPC With 4 Subnets, IPv4, IPv6 aswell as other attachments such as a NatGateway, Route53 Records, Flowlogs & Endpoints.
 
 ## Example File
@@ -29,6 +29,10 @@ This contains examples of some YAML formatting and features that can be used whe
 ## Parameters Template
 This contains examples of parameter formatting through the metadata section, aswell as the different types of parameters & their settings.
 
+## Nested Stack Template
+Basic nesed stack configuration that will pull a CFN template from the SourceBucket parameter and deploy it.
+
+**Future Updates:** Add second stack, more parameters & maybe some SSM parameter resolutions too.
 
 # Future Templates:
 - CI/CD Pipeline Template (CodePipeline, CodeBuild, CodeDeploy etc) - This will probably be a simple pipeline that deploys some cfn templates.
