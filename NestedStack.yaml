@@ -2,25 +2,74 @@ Parameters:
   SourceBucket:
     Type: String
     Description: S3 bucket name where CF templates are stored
+  Project:
+    Type: String
+    Description: Name of the Project
+  UpstreamStack:
+    Type: String
+    Description: Name of the common cloudformation component stack 
+  Environment:
+    Type: String
+    Description: Name of Environment - will be used as tags and in name values
+  CodeBuildEnvironment:
+    Type: String
+    Description: Code build environment type
+    Default: "ubuntu-base:14.04-1.6.0"
+  CodeBuildGitRepository:
+    Type: String
+    Description: Git Repository to get code from
+  CodeBuildGitBranch:
+    Type: String
+    Description: Branch to use for git Repository
+    Default: "develop"
+  CodeBuildGitRepositoryOwner:
+    Type: String
+    Description: Owner of the git Repository
+    Default: "OUP"
+  CodeBuildGitAuthToken:
+    Type: String
+    Description: Github authentication Token
+  PipelineName:
+    Type: String
+    Description: Name of the codebuild Pipeline
+    Default: "GoldenAMI-Pipeline"
   InspectorLambdaName:
     Type: String
     Description: Name of the inspector lambda
     Default: "InspectorRun"
-  SecurityGroupIDs:
-    Type: String
-  SubnetIDs:
-    Type: String
 
 
 Resources:
   InspectorLambdaStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub 'https://${SourceBucket}.s3.amazonaws.com/lambda.yaml'
+      TemplateURL: !Sub 'https://${SourceBucket}.s3.amazonaws.com/${PipelineName}/lambda.yaml'
       TimeoutInMinutes: 30
       # Below are all the parameters CFN will pass to the stack
       Parameters:
         SourceBucket: !Ref SourceBucket
-        VPCSubnetIDs: !Ref SubnetIDs
-        VPCSecurityGroupIDs: !Ref SecurityGroupIDs
+        VPCSubnetIDs: !Sub '{{resolve:ssm:/${UpstreamStack}-${Environment}/SubnetPrivA:1}}' # These are SSM parameters
+        VPCSecurityGroupIDs: !Sub '{{resolve:ssm:/${UpstreamStack}-${Environment}/DefaultSG:1}}'
         LambdaName: !Ref InspectorLambdaName
+
+  PipelineStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub 'https://${SourceBucket}.s3.amazonaws.com/${PipelineName}/pipeline.yaml'
+      TimeoutInMinutes: 30
+      # Below are all the parameters CFN will pass to the stack
+      Parameters:        
+        BuilderVPC: !Sub '{{resolve:ssm:/${UpstreamStack}-${Environment}/VPC:1}}'
+        BuilderSecurityGroup: !Sub '{{resolve:ssm:/${UpstreamStack}-${Environment}/DefaultSG:1}}'
+        CodeBuildPublicSubnet: !Sub '{{resolve:ssm:/${UpstreamStack}-${Environment}/SubnetPrivA:1}}'
+        PipelineName: !Ref PipelineName
+        CodeBuildInspectorLambda: !Ref InspectorLambdaName
+        CodeBuildEnvironment: !Ref CodeBuildEnvironment
+        CodeBuildGitRepository: !Ref CodeBuildGitRepository
+        CodeBuildGitBranch: !Ref CodeBuildGitBranch
+        CodeBuildGitRepositoryOwner: !Ref CodeBuildGitRepositoryOwner
+        CodeBuildGitAuthToken: !Ref CodeBuildGitAuthToken
+        Environment: !Ref Environment
+        Project: !Ref Project
+        UpstreamStack: !Ref UpstreamStack
+        SecondarySourceBucket: !Ref SourceBucket
