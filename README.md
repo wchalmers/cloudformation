@@ -30,9 +30,7 @@ This contains examples of some YAML formatting and features that can be used whe
 This contains examples of parameter formatting through the metadata section, aswell as the different types of parameters & their settings.
 
 ## Nested Stack Template
-Basic nesed stack configuration that will pull a CFN template from the SourceBucket parameter and deploy it.
-
-**Future Updates:** Add second stack, more parameters & maybe some SSM parameter resolutions too.
+Nesed stack configuration that will pull CFNs templates from the SourceBucket parameter and deploy them. This will also take in multiple paramters and pass them to the child stacks, along with resolving some parameters from SSM parameter Store.
 
 # Future Templates:
 - CI/CD Pipeline Template (CodePipeline, CodeBuild, CodeDeploy etc) - This will probably be a simple pipeline that deploys some cfn templates.
